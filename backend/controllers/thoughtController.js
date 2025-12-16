@@ -14,6 +14,7 @@ import Thought from "../models/thoughtModel.js"
 export const getThoughts = async (req, res) => {
 
     try {
+
         const thoughts = await Thought.findAll();
 
         res.status(200).json({

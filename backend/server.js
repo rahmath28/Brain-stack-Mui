@@ -33,12 +33,13 @@ const startServer = async () => {
   await connectDB();
 
   //  added: models irundha tables create / update pannum
-  await sequelize.sync({ alter: true });
-  console.log("Tables synced ✅");
+  // await sequelize.sync({ alter: true });
+  // console.log("Tables synced ✅");
 
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
   });
+  
 };
 
 startServer();
