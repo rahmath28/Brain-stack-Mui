@@ -1,5 +1,6 @@
 // getting by model
 import Thought from "../models/thoughtModel.js"
+import { Op } from "sequelize"; // for to use operators..
 
 
 // Sequelize Methods
@@ -15,7 +16,67 @@ export const getThoughts = async (req, res) => {
 
     try {
 
-        const thoughts = await Thought.findAll();
+        // for filters functionality
+
+        let query = { // intha query object ah than fildAll method ku pass panneerukkom..
+            where: {// initially filter illa...
+                 // inga filters add aagum
+            } 
+        }; 
+
+        console.log(req.query) // initially empty object ah irukkum : {} 
+        // after question mark ku aprm varathu than query params
+        // question marku ku aprm add variable namala add pandrathu ..
+        // in key value pair , { search: '"book"' } , search :key , "book" : value.. 
+        // multiple queries pass panna can use , & operator.. 
+
+        // ex : http://localhost:5000/api/thoughts/?search="book"&test="testing" , will get as :  { search: '"book"', test: '"testing"' }
+        // multiple query params na intha maari kedaikum...
+
+
+        //1 . first filter : search by ( title and content)
+        if (req.query.search) { // url oda request  query params la , "search" nu iruntha than , intha fileter kana 
+            // if condition run agum..
+            // intha query.search na initially empty ah vachurukka object, athula search ku oru object create pandren..
+
+            // two different fields check na "or" opearator use pannaum, opearators use pannaum na , we have to use "op" : means operator from sequelize.
+            // two field check so "or" opearator..
+
+            // *** : Query Params : Always string by default, Quotes are part of the value.
+            // postman check : shouldnt use double quotes in the value , ex : 
+            // http://localhost:5000/api/thoughts?search=horor : look value without string , should pass like that.
+
+            query.where[Op.or] = [
+                // two object check  title nd content.
+                { title: { [Op.iLike]: `%${req.query.search}%` } }, // checking title by search
+                { content: { [Op.iLike]: `%${req.query.search}%` } } // checking title by search
+            ]
+        }
+
+
+        // 2. filter (category) , where dra object condition check panna , 
+        // single field check panan direct ah check pannalam.
+        if(req.query.category){  // intha if parenthesis la irukkathu , req.query.category : url query la category nu oru key iruntha intha condition will run
+            query.where.category= req.query.category 
+            // left side (query.where.category) : query object la where condition la category ah pass pannirukkom
+            // right side (req.query.category) : query params oda variable value , ex : http://localhost:5000/api/thoughts/?category=Learning
+        }
+
+
+        // 3. filter (isFavourite)
+        if(req.query.isFavourite){
+            query.where.isFavourite =req.query.isFavourite === "true" // only isFavourite true mattum than venum..
+        }
+
+        // 4. filter (tags : (hashtags) )
+        if(req.query.tag){
+            query.where.tags ={[Op.contains] : [req.query.tag]}
+            // left side , findAll method vachu , where condition vachu find pandrom model use panni db la,
+            // right side ,  query ku kudukkura value ah pass pandrom , like postman la test pandra appo pass pandra value.
+        }
+
+
+        const thoughts = await Thought.findAll(query);
 
         res.status(200).json({
             success: true,
@@ -125,7 +186,7 @@ export const getThoughtById = async (req, res) => {
         const thought = await Thought.findByPk(id);
 
         if (!thought) {
-          return  res.status(404).json({ // IMPORTANT: Early-aa response (404) send pannrom,so function inga stop aaganum, 
+            return res.status(404).json({ // IMPORTANT: Early-aa response (404) send pannrom,so function inga stop aaganum, 
                 //return illa na keela irukka code run aagi, double response error varum.
                 success: false,
                 message: "Thought not found for the id"
